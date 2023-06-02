@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { HashService } from '../hash/hash.service';
+import exceptions from '../common/constants/exceptions';
 
 @Injectable()
 export class AuthService {
@@ -24,10 +25,18 @@ export class AuthService {
   ): Promise<User | null> {
     const user = await this.usersService.findOne(username);
 
+    if (!user) {
+      throw new UnauthorizedException(exceptions.auth.unauthorized);
+    }
+
     const isAuthorized = await this.hashService.compareHash(
       password,
       user.password,
     );
+
+    if (!isAuthorized) {
+      throw new UnauthorizedException(exceptions.auth.unauthorized);
+    }
 
     return isAuthorized ? user : null;
   }

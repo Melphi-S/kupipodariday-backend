@@ -1,4 +1,4 @@
-import { IsPositive, IsUrl, Length } from 'class-validator';
+import { IsNumber, IsPositive, IsUrl, Length } from 'class-validator';
 
 export class CreateWishDto {
   @Length(1, 200)
@@ -10,6 +10,7 @@ export class CreateWishDto {
   @IsUrl()
   image: string;
 
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   price: number;
 

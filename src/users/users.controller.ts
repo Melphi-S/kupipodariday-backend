@@ -7,10 +7,8 @@ import {
   Param,
   UseInterceptors,
   ClassSerializerInterceptor,
-  Req,
   SerializeOptions,
   UseGuards,
-  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,6 +16,8 @@ import { User } from './entities/user.entity';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { UserPublicProfileResponseDto } from './dto/user-public-profile-response.dto';
+import { Wish } from '../wishes/entities/wish.entity';
+import { AuthUser } from '../common/decorators/auth-user.decorator';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @UseGuards(JwtGuard)
@@ -27,9 +27,7 @@ export class UsersController {
 
   @SerializeOptions({ groups: ['private'] })
   @Get('me')
-  async getOwnUser(
-    @Req() { user }: { user: User },
-  ): Promise<UserProfileResponseDto> {
+  async getOwnUser(@AuthUser() user: User): Promise<UserProfileResponseDto> {
     return this.usersService.findById(user.id);
   }
 
@@ -37,26 +35,32 @@ export class UsersController {
   async getUser(
     @Param('username') username: string,
   ): Promise<UserPublicProfileResponseDto> {
-    const user = await this.usersService.findOne(username);
-
-    if (!user) {
-      throw new NotFoundException('Пользователь не найден');
-    }
-
-    return user;
+    return this.usersService.findOne(username);
   }
 
   @Post('find')
-  async findUsers(@Body('query') query: string) {
+  async findUsers(@Body('query') query: string): Promise<User[]> {
     return this.usersService.findMany(query);
   }
 
   @SerializeOptions({ groups: ['private'] })
   @Patch('me')
   async updateOwnUser(
-    @Req() { user }: { user: User },
+    @AuthUser() user: User,
     @Body() updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<User> {
     return this.usersService.update(user.id, updateUserDto);
+  }
+
+  @Get('me/wishes')
+  async getOwnUserWishes(@AuthUser() user: User): Promise<Wish[]> {
+    return this.usersService.findUserWishes(user.id);
+  }
+
+  @Get(':username/wishes')
+  async getUserWishes(@Param('username') username: string) {
+    const user = await this.usersService.findOne(username);
+
+    return this.usersService.findUserWishes(user.id);
   }
 }

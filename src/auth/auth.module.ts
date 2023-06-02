@@ -19,14 +19,14 @@ import { HashModule } from '../hash/hash.module';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_KEY'),
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRATION'),
+          expiresIn: configService.get('JWT_TTL'),
         },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, ConfigService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -7,7 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { IsPositive, IsUrl, Length } from 'class-validator';
+import { IsNumber, IsPositive, IsUrl, Length } from "class-validator";
 import { User } from '../../users/entities/user.entity';
 import { Wishlist } from '../../wishlists/entities/wishlist.entity';
 import { Offer } from '../../offers/entities/offer.entity';
@@ -36,6 +36,7 @@ export class Wish {
   image: string;
 
   @Column()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   price: number;
 
@@ -44,10 +45,12 @@ export class Wish {
   description: string;
 
   @Column({ default: 0 })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   raised: number;
 
   @Column({ default: 0 })
+  @IsNumber()
   @IsPositive()
   copied: number;
 
@@ -57,6 +60,6 @@ export class Wish {
   @OneToMany(() => Offer, (offer) => offer.wish)
   offers: Offer[];
 
-  @ManyToMany(() => Wishlist, (wishlist) => wishlist.wishes)
+  @ManyToMany(() => Wishlist, (wishlist) => wishlist.items)
   wishlist: Wishlist[];
 }

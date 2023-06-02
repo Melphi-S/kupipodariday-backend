@@ -12,6 +12,7 @@ import { LocalGuard } from './guards/local.guard';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { User } from '../users/entities/user.entity';
 import { SigninResponseDto } from './dto/signin-response.dto';
+import { AuthUser } from '../common/decorators/auth-user.decorator';
 
 @Controller()
 export class AuthController {
@@ -22,7 +23,7 @@ export class AuthController {
 
   @UseGuards(LocalGuard)
   @Post('signin')
-  signin(@Req() { user }: { user: User }): SigninResponseDto {
+  signin(@AuthUser() user: User): SigninResponseDto {
     return this.authService.auth(user);
   }
 
