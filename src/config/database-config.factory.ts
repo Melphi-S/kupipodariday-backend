@@ -1,17 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { join } from 'path';
 
 @Injectable()
-export class DatabaseConfigService implements TypeOrmOptionsFactory {
-  constructor(private configService: ConfigService) {}
+export class TypeOrmConfigService implements TypeOrmOptionsFactory {
+  constructor(private readonly configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
       type: 'postgres',
-      url: this.configService.get<string>('MONGODB_URL'),
-      username: this.configService.get<string>('MONGODB_USER'),
-      password: this.configService.get<string>('MONGODB_PASSWORD'),
+      host: this.configService.get<string>('database.host'),
+      port: this.configService.get<number>('database.port'),
+      username: this.configService.get<string>('database.username'),
+      password: this.configService.get<string>('database.password'),
+      database: this.configService.get<string>('database.name'),
+      entities: [join(__dirname, '../**/*.entity.{js,ts}')],
+      synchronize: true,
     };
   }
 }

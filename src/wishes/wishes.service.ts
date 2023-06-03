@@ -86,7 +86,7 @@ export class WishesService {
     return this.wishRepository.update({ id }, { raised });
   }
 
-  async delete(id: number, userId: number): Promise<DeleteResult> {
+  async remove(id: number, userId: number): Promise<DeleteResult> {
     const wish = await this.findOne(id);
 
     if (userId !== wish.owner.id) {

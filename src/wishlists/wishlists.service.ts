@@ -7,7 +7,7 @@ import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wishlist } from './entities/wishlist.entity';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository, UpdateResult } from "typeorm";
 import { User } from '../users/entities/user.entity';
 import { WishesService } from '../wishes/wishes.service';
 import exceptions from '../common/constants/exceptions';
@@ -20,7 +20,10 @@ export class WishlistsService {
     private readonly wishesService: WishesService,
   ) {}
 
-  async create(createWishlistDto: CreateWishlistDto, owner: User) {
+  async create(
+    createWishlistDto: CreateWishlistDto,
+    owner: User,
+  ): Promise<Wishlist> {
     const items = await this.wishesService.findMany(createWishlistDto.itemsId);
 
     if (!items.length) {
@@ -36,7 +39,7 @@ export class WishlistsService {
     return this.wishlistRepository.save(newWishlist);
   }
 
-  async findAll() {
+  async findAll(): Promise<Wishlist[]> {
     return this.wishlistRepository.find({
       relations: {
         owner: true,
@@ -45,7 +48,7 @@ export class WishlistsService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<Wishlist> {
     const wishlist = await this.wishlistRepository.findOne({
       where: {
         id,
@@ -67,7 +70,7 @@ export class WishlistsService {
     id: number,
     updateWishlistDto: UpdateWishlistDto,
     userId: number,
-  ) {
+  ): Promise<UpdateResult> {
     const wish = await this.findOne(id);
 
     if (wish.owner.id !== userId) {
@@ -77,7 +80,7 @@ export class WishlistsService {
     return this.wishlistRepository.update(id, updateWishlistDto);
   }
 
-  async remove(id: number, userId: number) {
+  async remove(id: number, userId: number): Promise<DeleteResult> {
     const wish = await this.findOne(id);
 
     if (wish.owner.id !== userId) {

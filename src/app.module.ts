@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { WishesModule } from './wishes/wishes.module';
@@ -10,26 +9,14 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { HashModule } from './hash/hash.module';
 import configuration from './config/configuration';
+import { TypeOrmConfigService } from './config/database-config.factory';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(
-      // {
-      //   imports: [ConfigModule],
-      //   useClass: DatabaseConfigService,
-      // },
-      {
-        type: 'postgres',
-        host: 'localhost',
-        port: 5432,
-        username: 'student',
-        password: 'student',
-        database: 'kupipodariday',
-        entities: [__dirname + '/**/**/*.entity.{js,ts}'],
-        synchronize: true,
-      },
-    ),
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    TypeOrmModule.forRootAsync({
+      useClass: TypeOrmConfigService,
+    }),
     UsersModule,
     WishesModule,
     WishlistsModule,
@@ -38,6 +25,5 @@ import configuration from './config/configuration';
     HashModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

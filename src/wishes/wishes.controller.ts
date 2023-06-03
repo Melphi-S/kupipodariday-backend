@@ -16,6 +16,7 @@ import { User } from '../users/entities/user.entity';
 import { Wish } from './entities/wish.entity';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { AuthUser } from '../common/decorators/auth-user.decorator';
+import { DeleteResult, UpdateResult } from 'typeorm';
 
 @Controller('wishes')
 export class WishesController {
@@ -31,12 +32,12 @@ export class WishesController {
   }
 
   @Get('last')
-  async getLast() {
+  async getLast(): Promise<Wish[]> {
     return this.wishesService.findLast();
   }
 
   @Get('top')
-  async getTop() {
+  async getTop(): Promise<Wish[]> {
     return this.wishesService.findTop();
   }
 
@@ -51,14 +52,17 @@ export class WishesController {
     @Param('id') id: number,
     @Body() updateWishDto: UpdateWishDto,
     @AuthUser() user: User,
-  ) {
+  ): Promise<UpdateResult> {
     return this.wishesService.update(id, updateWishDto, user.id);
   }
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  async deleteWish(@Param('id') id: number, @AuthUser() user: User) {
-    return this.wishesService.delete(id, user.id);
+  async deleteWish(
+    @Param('id') id: number,
+    @AuthUser() user: User,
+  ): Promise<DeleteResult> {
+    return this.wishesService.remove(id, user.id);
   }
 
   @UseGuards(JwtGuard)
