@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   UseGuards,
-  Req,
   SerializeOptions,
   Body,
 } from '@nestjs/common';

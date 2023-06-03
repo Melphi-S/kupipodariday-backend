@@ -1,26 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Offer } from './entities/offer.entity';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
+import { WishesService } from '../wishes/wishes.service';
+import exceptions from '../common/constants/exceptions';
 
 @Injectable()
 export class OffersService {
-  create(createOfferDto: CreateOfferDto) {
-    return 'This action adds a new offer';
+  constructor(
+    @InjectRepository(Offer)
+    private readonly offerRepository: Repository<Offer>,
+    private readonly wishesService: WishesService,
+  ) {}
+
+  async create(createOfferDto: CreateOfferDto, user: User): Promise<Offer> {
+    const { amount, hidden, itemId } = createOfferDto;
+
+    const item = await this.wishesService.findOne(itemId);
+
+    if (item.owner.id === user.id) {
+      throw new BadRequestException(exceptions.offers.forbidden);
+    }
+
+    const raised = item.raised + amount;
+
+    if (raised > item.price) {
+      throw new BadRequestException(exceptions.offers.exceededPrice);
+    }
+
+    const newOffer = await this.offerRepository.create({
+      amount,
+      hidden,
+      user,
+      item,
+    });
+
+    await this.wishesService.updateRaised(itemId, raised);
+
+    return this.offerRepository.save(newOffer);
   }
 
-  findAll() {
-    return `This action returns all offers`;
+  async findAll(): Promise<Offer[]> {
+    return this.offerRepository.find({ relations: { user: true, item: true } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} offer`;
-  }
+  async findOne(id: number): Promise<Offer> {
+    const offer = await this.offerRepository.findOne({
+      where: { id },
+      relations: { user: true, item: true },
+    });
 
-  update(id: number, updateOfferDto: UpdateOfferDto) {
-    return `This action updates a #${id} offer`;
-  }
+    if (!offer) {
+      throw new NotFoundException(exceptions.offers.notFound);
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} offer`;
+    return offer;
   }
 }

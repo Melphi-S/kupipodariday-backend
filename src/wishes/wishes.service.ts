@@ -49,7 +49,7 @@ export class WishesService {
       where: { id },
       relations: {
         owner: true,
-        offers: true,
+        offers: { user: true },
       },
     });
 

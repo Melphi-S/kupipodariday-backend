@@ -7,7 +7,7 @@ import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wishlist } from './entities/wishlist.entity';
-import { DeleteResult, Repository, UpdateResult } from "typeorm";
+import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { WishesService } from '../wishes/wishes.service';
 import exceptions from '../common/constants/exceptions';

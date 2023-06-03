@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { WishesService } from './wishes.service';
@@ -26,7 +25,7 @@ export class WishesController {
   @Post()
   async create(
     @Body() createWishDto: CreateWishDto,
-    @Req() { user }: { user: User },
+    @AuthUser() user: User,
   ): Promise<Wish> {
     return this.wishesService.create(createWishDto, user);
   }
@@ -41,6 +40,7 @@ export class WishesController {
     return this.wishesService.findTop();
   }
 
+  @UseGuards(JwtGuard)
   @Get(':id')
   async getWish(@Param('id') id: number): Promise<Wish> {
     return this.wishesService.findOne(id);
