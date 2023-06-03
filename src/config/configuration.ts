@@ -14,6 +14,6 @@ export default () => ({
     ttl: process.env.JWT_TTL || '7d',
   },
   hash: {
-    salt: Number(process.env.SALT) || 10,
+    salt: process.env.SALT || 10,
   },
 });
