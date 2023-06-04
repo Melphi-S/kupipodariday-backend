@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -28,7 +32,13 @@ export class UsersService {
       password,
     });
 
-    return this.userRepository.save(newUser);
+    return this.userRepository.save(newUser).catch((e) => {
+      if (e.code == exceptions.dbCodes.notUnique) {
+        throw new BadRequestException(exceptions.users.notUnique);
+      }
+
+      return e;
+    });
   }
 
   async findById(id: number): Promise<User> {
@@ -66,7 +76,13 @@ export class UsersService {
       );
     }
 
-    await this.userRepository.update({ id }, updateUserDto);
+    await this.userRepository.update({ id }, updateUserDto).catch((e) => {
+      if (e.code == exceptions.dbCodes.notUnique) {
+        throw new BadRequestException(exceptions.users.notUnique);
+      }
+
+      return e;
+    });
 
     return this.userRepository.findOneBy({ id });
   }

@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -7,17 +7,28 @@ import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wish } from './entities/wish.entity';
-import { DeleteResult, In, Repository, UpdateResult } from 'typeorm';
+import {
+  DataSource,
+  DeleteResult,
+  In,
+  Repository,
+  UpdateResult,
+} from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import exceptions from '../common/constants/exceptions';
+import queryRunner from '../common/helpers/queryRunner';
 
 @Injectable()
 export class WishesService {
   constructor(
-    @InjectRepository(Wish) private readonly wishRepository: Repository<Wish>,
+    @InjectRepository(Wish)
+    private readonly wishRepository: Repository<Wish>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createWishDto: CreateWishDto, user: User): Promise<Wish> {
+    await this.checkDuplicate(createWishDto, user);
+
     const newWish = await this.wishRepository.create({
       ...createWishDto,
       owner: user,
@@ -60,6 +71,26 @@ export class WishesService {
     return wish;
   }
 
+  async checkDuplicate(createWishDto: CreateWishDto, user: User) {
+    const { name, link, price } = createWishDto;
+
+    const wish = await this.wishRepository.findOne({
+      where: {
+        name,
+        link,
+        price,
+        owner: { id: user.id },
+      },
+      relations: { owner: true },
+    });
+
+    if (wish) {
+      throw new ForbiddenException(exceptions.wishes.duplicated);
+    }
+
+    return;
+  }
+
   async findMany(wishesIds: number[]): Promise<Wish[]> {
     return this.wishRepository.find({ where: { id: In(wishesIds) } });
   }
@@ -72,11 +103,11 @@ export class WishesService {
     const wish = await this.findOne(id);
 
     if (userId !== wish.owner.id) {
-      throw new BadRequestException(exceptions.wishes.forbidden);
+      throw new ForbiddenException(exceptions.wishes.forbidden);
     }
 
     if (wish.raised && updateWishDto.price > 0) {
-      throw new BadRequestException(exceptions.wishes.blockedPrice);
+      throw new ForbiddenException(exceptions.wishes.blockedPrice);
     }
 
     return this.wishRepository.update({ id }, updateWishDto);
@@ -90,7 +121,7 @@ export class WishesService {
     const wish = await this.findOne(id);
 
     if (userId !== wish.owner.id) {
-      throw new BadRequestException(exceptions.wishes.forbidden);
+      throw new ForbiddenException(exceptions.wishes.forbidden);
     }
 
     return this.wishRepository.delete(id);
@@ -103,6 +134,8 @@ export class WishesService {
       throw new NotFoundException(exceptions.wishes.notFound);
     }
 
+    await this.checkDuplicate(wish, user);
+
     const { name, link, image, price, description } = wish;
 
     const copiedWish = await this.wishRepository.create({
@@ -114,11 +147,11 @@ export class WishesService {
       owner: user,
     });
 
-    await this.wishRepository.update(
-      { id: wish.id },
-      { copied: ++wish.copied },
-    );
+    await queryRunner(this.dataSource, [
+      this.wishRepository.update({ id: wish.id }, { copied: ++wish.copied }),
+      this.wishRepository.save(copiedWish),
+    ]);
 
-    return this.wishRepository.save(copiedWish);
+    return copiedWish;
   }
 }

@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -74,7 +74,7 @@ export class WishlistsService {
     const wish = await this.findOne(id);
 
     if (wish.owner.id !== userId) {
-      throw new BadRequestException(exceptions.wishlists.forbidden);
+      throw new ForbiddenException(exceptions.wishlists.forbidden);
     }
 
     return this.wishlistRepository.update(id, updateWishlistDto);
@@ -84,7 +84,7 @@ export class WishlistsService {
     const wish = await this.findOne(id);
 
     if (wish.owner.id !== userId) {
-      throw new BadRequestException(exceptions.wishlists.forbidden);
+      throw new ForbiddenException(exceptions.wishlists.forbidden);
     }
 
     return this.wishlistRepository.delete(id);

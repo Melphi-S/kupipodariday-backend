@@ -1,15 +1,16 @@
 import {
-  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Offer } from './entities/offer.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { WishesService } from '../wishes/wishes.service';
 import exceptions from '../common/constants/exceptions';
+import queryRunner from '../common/helpers/queryRunner';
 
 @Injectable()
 export class OffersService {
@@ -17,6 +18,7 @@ export class OffersService {
     @InjectRepository(Offer)
     private readonly offerRepository: Repository<Offer>,
     private readonly wishesService: WishesService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createOfferDto: CreateOfferDto, user: User): Promise<Offer> {
@@ -25,13 +27,13 @@ export class OffersService {
     const item = await this.wishesService.findOne(itemId);
 
     if (item.owner.id === user.id) {
-      throw new BadRequestException(exceptions.offers.forbidden);
+      throw new ForbiddenException(exceptions.offers.forbidden);
     }
 
     const raised = item.raised + amount;
 
     if (raised > item.price) {
-      throw new BadRequestException(exceptions.offers.exceededPrice);
+      throw new ForbiddenException(exceptions.offers.exceededPrice);
     }
 
     const newOffer = await this.offerRepository.create({
@@ -41,9 +43,12 @@ export class OffersService {
       item,
     });
 
-    await this.wishesService.updateRaised(itemId, raised);
+    await queryRunner(this.dataSource, [
+      this.wishesService.updateRaised(itemId, raised),
+      this.offerRepository.save(newOffer),
+    ]);
 
-    return this.offerRepository.save(newOffer);
+    return newOffer;
   }
 
   async findAll(): Promise<Offer[]> {
